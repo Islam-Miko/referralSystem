@@ -12,12 +12,6 @@ from .errors import AmountError, NotificationOff, MonthAmountError, OnlyOnceErro
 from .serializers import InviteSerializer, SubsSerializer
 # Create your views here.
 
-#
-# def create_subs(number):
-#     """creates new instance of Subscribers"""
-#     new_instance = Subscribers(phone=number)
-#     new_instance.save()
-#
 
 def check_in_db(phone):
     """Searches in DB by phone. if finds obj returns True
@@ -28,7 +22,7 @@ def check_in_db(phone):
     return query_of_phone[0]
     # get_or_create() returns tuple
     # first element is obj, second is boolean- if instance was created or not
-    # thats wy we take first element
+    # that is wy we take first element
 
 
 def create_new_invite(sender, receiver):
@@ -42,8 +36,10 @@ def conditions_for_sender(sender):
     limit of 5 invitations to one day
     limit of 30 invitations to one month"""
     senders_invitations_for_day = Invite.objects.filter(
-        Q(sender_id=sender) & Q(start_date__date=datetime.datetime.today().date
-                                )).aggregate(qnt=Count('sender_id'))
+                            Q(sender_id=sender) &
+                            Q(start_date__day=datetime.datetime.today().day) &
+                            Q(start_date__month=datetime.datetime.today().month
+                            )).aggregate(qnt=Count('sender_id'))
     senders_invitations_for_month = Invite.objects.filter(
         Q(sender_id=sender) & Q(start_date__month=datetime.datetime.today().month
                                 )).aggregate(qnt=Count('sender_id'))
@@ -65,25 +61,28 @@ def rewrite_invitations_to_receiver(receiver):
     and changes end date, status"""
     last_invitations = Invite.objects.filter(receiver_id=receiver).last()
     if last_invitations is None:
-        ... # if receiver was never invited before we do nothing
+        ...  # if receiver was never invited before we do nothing
     else:
         last_invitations.status = 'NOTACTIVE'
-        last_invitations.end_date= datetime.datetime.now()
+        last_invitations.end_date = datetime.datetime.now()
         last_invitations.save()
 
 
 def check_send_only_once(sender, receiver):
     senders_invitations_for_day = Invite.objects.filter(
-        Q(sender_id=sender) & Q(receiver_id=receiver) & Q(start_date__day=datetime.datetime.today().day
-                                ))
-    print(senders_invitations_for_day)
+        Q(sender_id=sender) & Q(receiver_id=receiver) & Q(start_date__day=datetime.datetime.today().day))
     if senders_invitations_for_day:
         raise OnlyOnceError
 
+
 def check_for_registered_receiver(receiver):
     q = Invite.objects.filter(receiver_id=receiver).last()
-    if q.status == "ACCEPTED":
+    if q is None:
+        pass
+    elif q.status == 'ACCEPTED':
         raise AcceptedError
+
+
 @api_view(['GET'])
 def send_invite(request, sender, receiver):
     """Checks if sender in DB. If not creates in DB"""
@@ -107,12 +106,12 @@ def send_invite(request, sender, receiver):
                         status=status.HTTP_403_FORBIDDEN)
     except AcceptedError:
         return Response('Abonement already registered!')
-
-
     return Response(f'Invite was sent to {receiver}', status=status.HTTP_202_ACCEPTED)
+
 
 @api_view(['GET'])
 def invitations(request, receiver):
+    """Shows all invitations to this number"""
     try:
         receiver = Subscribers.objects.get(phone=receiver)
     except ObjectDoesNotExist:
@@ -124,6 +123,7 @@ def invitations(request, receiver):
 
 @api_view(['GET'])
 def sent_invitations(request, sender):
+    """Shows all sent invitations by given number"""
     try:
         sender = Subscribers.objects.get(phone=sender)
     except ObjectDoesNotExist:
@@ -133,44 +133,65 @@ def sent_invitations(request, sender):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-def check_invites(object):
-    invites = Invite.objects.filter(Q(receiver_id=object) &
-                                    Q(end_date__range=[datetime.datetime.today(),
-                                                       datetime.datetime(year=2999,
+def get_last_invitation(obj):
+    """returns last object of InviteModel"""
+    invitation = Invite.objects.filter(Q(receiver_id=obj) &
+                                       Q(end_date__range=[datetime.datetime.today(),
+                                                        datetime.datetime(year=2999,
                                                                          month=12,
                                                                          day=31)],))
-    if invites:
-        return invites.last()
-    return False
+
+    return invitation.last()
 
 
-def change_last_invite(last_invite):
-    last_invite.status = "ACCEPTED"
-    last_invite.end_date = datetime.datetime.now()
-    last_invite.save()
-    return last_invite
+def change_last_invite(phone):
+    abo_subs = Subscribers.objects.filter(phone=phone).get()
+    last_invitation = get_last_invitation(abo_subs)
+    last_invitation.status = "ACCEPTED"
+    last_invitation.end_date = datetime.datetime.now()
+    last_invitation.save()
 
-def create_new_sub(newbie):
-    new = Subscribers(phone=newbie)
-    new.save()
-    return new
+
+def check_in_db_and_invitation(abo):
+    """checks if given number is in db
+    or has invit."""
+    subs = Subscribers.objects.filter(phone=abo).last()
+    if subs:
+        subs_invitation = Invite.objects.filter(receiver_id=subs).all()
+        if subs_invitation:
+            return True, True
+        return True, False
+    return False, False
+
+
+def create_subs(number):
+    """creates new instance of Subscribers"""
+    new_instance = Subscribers(phone=number)
+    new_instance.save()
+
+
+def create_fake_invitation(number):
+    """function to prevent sending invitations to registered abos"""
+    subs = Subscribers.objects.filter(phone=number).last()
+    fake_invitation = Invite(sender_id=subs,
+                             receiver_id=subs,
+                             status="ACCEPTED",
+                             end_date=datetime.datetime.now())
+    fake_invitation.save()
 
 
 @api_view(['GET'])
-def someFunction(request, number):
-    try:
-        abo = Subscribers.objects.get(phone=number)
-    except ObjectDoesNotExist:
-        created_subscriber = create_new_sub(number)
-        seri = SubsSerializer(created_subscriber)
-        return Response(seri.data)
+def registration_function(request, number):
+    newAbo_in_db, newAbo_has_invitation = check_in_db_and_invitation(number)
 
-    has_invite = check_invites(abo)
-    if has_invite:
-        changed_last_invite = change_last_invite(has_invite)
-        serializer = InviteSerializer(changed_last_invite)
-        return Response(serializer.data)
-    else:
-        return Response("Congrats! You have registered You had no invitations")
-
-
+    if not newAbo_in_db:
+        create_subs(number)
+        create_fake_invitation(number)
+        return Response('You have registered. You had no invitations!')
+    if not newAbo_has_invitation:
+        create_fake_invitation(number)
+        return Response('You have successfully registered. You had no invitations!')
+    if newAbo_has_invitation:
+        change_last_invite(number)
+        return Response('Congrats. You have successfully registerd!'
+                        'had invitations')

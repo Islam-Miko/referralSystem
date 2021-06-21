@@ -12,3 +12,7 @@ class NotificationOff(Exception):
 
 class OnlyOnceError(Exception):
     pass
+
+
+class AcceptedError(Exception):
+    pass

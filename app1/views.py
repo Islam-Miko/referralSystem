@@ -8,7 +8,7 @@ from .models import Subscribers, Invite
 from django.db.models import Count, Q
 
 
-from .errors import AmountError, NotificationOff, MonthAmountError, OnlyOnceError
+from .errors import AmountError, NotificationOff, MonthAmountError, OnlyOnceError, AcceptedError
 from .serializers import InviteSerializer
 # Create your views here.
 
@@ -43,7 +43,8 @@ def conditions_for_sender(sender):
     limit of 30 invitations to one month"""
     senders_invitations_for_day = Invite.objects.filter(
         Q(sender_id=sender) & Q(start_date__day=datetime.datetime.today().day
-                                )).aggregate(qnt=Count('sender_id'))
+                                ) & Q(start_date__month=datetime.datetime.today().month)
+                                ).aggregate(qnt=Count('sender_id'))
     senders_invitations_for_month = Invite.objects.filter(
         Q(sender_id=sender) & Q(start_date__month=datetime.datetime.today().month
                                 )).aggregate(qnt=Count('sender_id'))
@@ -80,6 +81,12 @@ def check_send_only_once(sender, receiver):
     if senders_invitations_for_day:
         raise OnlyOnceError
 
+def check_for_accepted(receiver):
+    q_last_invite = Invite.objects.filter(receiver_id=receiver).last()
+    if q_last_invite is None:
+        pass
+    elif q_last_invite.status == 'ACCEPTED':
+        raise AcceptedError
 
 @api_view(['GET'])
 def send_invite(request, sender, receiver):
@@ -87,11 +94,14 @@ def send_invite(request, sender, receiver):
     sender_instance = check_in_db(sender)  # creates new obj in Subs and returns it
     receiver_instance = check_in_db(receiver)  # creates new obj in Subs and returns it
     try:
+        check_for_accepted(receiver_instance)
         check_send_only_once(sender_instance, receiver_instance)
         rewrite_invitations_to_receiver(receiver_instance)
         create_new_invite(sender_instance, receiver_instance)
         conditions_for_sender(sender_instance)
         check_for_notification_property(receiver_instance)
+    except AcceptedError:
+        return Response('Abo already registered!', status=status.HTTP_405_METHOD_NOT_ALLOWED)
     except AmountError:
         return Response('You sent more than 5 invitations today', status=status.HTTP_405_METHOD_NOT_ALLOWED)
     except NotificationOff:

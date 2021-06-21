@@ -5,4 +5,5 @@ urlpatterns = [
     path('invite/send/<str:sender>/<str:receiver>', views.send_invite),
     path('invite/accept/<str:receiver>', views.invitations),
     path('invite/sent/<str:sender>', views.sent_invitations),
+    path('registration/<str:number>', views.someFunction),
 ]

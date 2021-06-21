@@ -1,6 +1,6 @@
 import datetime
 
-
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -9,6 +9,7 @@ from django.db.models import Count, Q
 
 
 from .errors import AmountError, NotificationOff, MonthAmountError, OnlyOnceError
+from .serializers import InviteSerializer
 # Create your views here.
 
 #
@@ -68,13 +69,15 @@ def rewrite_invitations_to_receiver(receiver):
     else:
         last_invitations.status = 'NOTACTIVE'
         last_invitations.end_date= datetime.datetime.now()
+        last_invitations.save()
 
 
 def check_send_only_once(sender, receiver):
     senders_invitations_for_day = Invite.objects.filter(
         Q(sender_id=sender) & Q(receiver_id=receiver) & Q(start_date__day=datetime.datetime.today().day
                                 ))
-    if senders_invitations_for_day is not None:
+    print(senders_invitations_for_day)
+    if senders_invitations_for_day:
         raise OnlyOnceError
 
 
@@ -101,3 +104,13 @@ def send_invite(request, sender, receiver):
 
 
     return Response(f'Invite was sent to {receiver}', status=status.HTTP_202_ACCEPTED)
+
+@api_view(['GET'])
+def invitations(request, receiver):
+    try:
+        receiver = Subscribers.objects.get(phone=receiver)
+    except ObjectDoesNotExist:
+        return Response('This number is not in out system', status=status.HTTP_404_NOT_FOUND)
+    all_invitations = Invite.objects.filter(receiver_id=receiver)
+    serializer = InviteSerializer(all_invitations, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)

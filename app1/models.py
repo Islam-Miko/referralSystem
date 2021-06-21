@@ -10,12 +10,22 @@ class Subscribers(models.Model):
     add_date = models.DateField(verbose_name='added date', default=date.today())
     edit_date = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.phone
+
 
 class Invite(models.Model):
     sender_id = models.ForeignKey(Subscribers, on_delete=models.CASCADE,
                                   related_name='sender',verbose_name='Sender')
     receiver_id = models.ForeignKey(Subscribers, on_delete=models.CASCADE,
                                     related_name='receiver', verbose_name='Receiver')
-    status = models.CharField('status', max_length=50)
+    status = models.CharField('status', max_length=50, default='ACTIVE')
     start_date = models.DateTimeField(verbose_name='sD', auto_now_add=True)
-    end_date = models.DateTimeField(verbose_name='eD', default=datetime.datetime())
+    end_date = models.DateTimeField(verbose_name='eD', default=datetime(
+                                                                        year=2999,
+                                                                        month=12,
+                                                                        day=31
+    ))
+
+    def __str__(self):
+        return f'From {self.sender_id} to {self.receiver_id}'

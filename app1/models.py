@@ -5,6 +5,7 @@ from django.db import models
 
 # Create your models here.
 class Subscribers(models.Model):
+    """model of Abo`s in system"""
     phone = models.CharField('Phone number', max_length=15)
     active = models.BooleanField(verbose_name='Notification', default=True)
     add_date = models.DateField(verbose_name='added date', default=date.today())
@@ -15,6 +16,7 @@ class Subscribers(models.Model):
 
 
 class Invite(models.Model):
+    """Invitations that were sent between Subscribers"""
     sender_id = models.ForeignKey(Subscribers, on_delete=models.CASCADE,
                                   related_name='sender',verbose_name='Sender')
     receiver_id = models.ForeignKey(Subscribers, on_delete=models.CASCADE,

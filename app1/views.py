@@ -74,6 +74,7 @@ def rewrite_invitations_to_receiver(receiver):
 
 
 def check_send_only_once(sender, receiver):
+    """checks if sender sent to receiver an invitations already"""
     senders_invitations_for_day = Invite.objects.filter(
         Q(sender_id=sender) & Q(receiver_id=receiver) & Q(start_date__day=datetime.datetime.today().day
                                 ))
@@ -82,6 +83,7 @@ def check_send_only_once(sender, receiver):
         raise OnlyOnceError
 
 def check_for_accepted(receiver):
+    """checks if last invite was accepted"""
     q_last_invite = Invite.objects.filter(receiver_id=receiver).last()
     if q_last_invite is None:
         pass
@@ -117,6 +119,7 @@ def send_invite(request, sender, receiver):
 
 @api_view(['GET'])
 def invitations(request, receiver):
+    """Shows all invitations that were sent to number(receiver"""
     try:
         receiver = Subscribers.objects.get(phone=receiver)
     except ObjectDoesNotExist:
@@ -128,6 +131,7 @@ def invitations(request, receiver):
 
 @api_view(['GET'])
 def sent_invitations(request, sender):
+    """Shows all sent invitations by given number(sender)"""
     try:
         sender = Subscribers.objects.get(phone=sender)
     except ObjectDoesNotExist:

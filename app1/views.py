@@ -110,7 +110,19 @@ def invitations(request, receiver):
     try:
         receiver = Subscribers.objects.get(phone=receiver)
     except ObjectDoesNotExist:
-        return Response('This number is not in out system', status=status.HTTP_404_NOT_FOUND)
+        return Response('This number is not in our system', status=status.HTTP_404_NOT_FOUND)
     all_invitations = Invite.objects.filter(receiver_id=receiver)
     serializer = InviteSerializer(all_invitations, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def sent_invitations(request, sender):
+    try:
+        sender = Subscribers.objects.get(phone=sender)
+    except ObjectDoesNotExist:
+        return Response('This number is not in our system', status=status.HTTP_404_NOT_FOUND)
+    all_sent_invitatins = Invite.objects.filter(sender_id=sender)
+    serializer = InviteSerializer(all_sent_invitatins, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+

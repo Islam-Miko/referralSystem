@@ -66,7 +66,7 @@ def rewrite_invitations_to_receiver(receiver):
     and changes end date, status"""
     last_invitations = Invite.objects.filter(receiver_id=receiver).last()
     if last_invitations is None:
-        1  # if receiver was never invited before we do nothing
+        pass  # if receiver was never invited before we do nothing
     else:
         last_invitations.status = 'NOTACTIVE'
         last_invitations.end_date= datetime.datetime.now()
@@ -93,6 +93,9 @@ def check_for_accepted(receiver):
 @api_view(['GET'])
 def send_invite(request, sender, receiver):
     """Checks if sender in DB. If not creates in DB"""
+    if sender == receiver:
+        return Response('You can not send an invitations to yourself',
+                        status=status.HTTP_403_FORBIDDEN)
     sender_instance = check_in_db(sender)  # creates new obj in Subs and returns it
     receiver_instance = check_in_db(receiver)  # creates new obj in Subs and returns it
     try:

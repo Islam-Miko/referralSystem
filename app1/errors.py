@@ -16,3 +16,7 @@ class OnlyOnceError(Exception):
 
 class AcceptedError(Exception):
     pass
+
+
+class AlreadyRegisteredError(Exception):
+    ...

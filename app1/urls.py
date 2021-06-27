@@ -10,4 +10,6 @@ urlpatterns = [
     # endpoint to see sent invitations by number
     path('registration/<str:number>', views.registration_function),
     # endpoint to registration
+    path('subs_settings/', views.change_subs),
+    #  endpoint to change active attribute in Subscriber`s objects
 ]

@@ -7,11 +7,9 @@ from .errors import AmountError, NotificationOff, MonthAmountError, OnlyOnceErro
 
 
 def check_in_db(phone):
-    """Searches in DB by phone. if finds obj returns True
+    """Searches in DB by phone. if finds obj returns it
     if no obj by phone was found calls create function"""
     query_of_phone = Subscribers.objects.filter(phone=phone).get_or_create(phone=phone)
-    print(query_of_phone)
-
     return query_of_phone[0]
     # get_or_create() returns tuple
     # first element is obj, second is boolean- if instance was created or not

@@ -5,15 +5,15 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-
-from .serializers import InviteSerializer
+from .models import Subscribers
+from .serializers import InviteSerializer, SubsSerializer
 from app1.auxilary_functions import *
 # Create your views here.
 
 
 @api_view(['GET'])
 def send_invite(request, sender, receiver):
-    """Checks if sender in DB. If not creates in DB"""
+    """Main function"""
     if sender == receiver:
         return Response('This is not possible!', status=status.HTTP_403_FORBIDDEN)
     sender_instance = check_in_db(sender)  # creates new obj in Subs and returns it
@@ -37,6 +37,23 @@ def send_invite(request, sender, receiver):
     except AcceptedError:
         return Response('Abonement already registered!')
     return Response(f'Invite was sent to {receiver}', status=status.HTTP_202_ACCEPTED)
+
+
+@api_view(['POST'])
+def change_subs(request):
+    """Allows to change active attr in Subscribes objects"""
+    if request.method == 'POST':
+        subs = request.data
+        subs_instance = Subscribers.objects.filter(phone=subs.get('phone')).last()
+        if subs_instance:
+            serializer = SubsSerializer(subs_instance, data=subs)
+        else:
+            serializer = SubsSerializer(data=subs)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])

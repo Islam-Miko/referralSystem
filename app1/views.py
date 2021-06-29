@@ -1,4 +1,4 @@
-import datetime
+
 
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
@@ -6,22 +6,24 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Subscribers
-from .serializers import InviteSerializer, SubsSerializer
+from .serializers import InviteSerializer, SubsSerializer, NumberSerializer
 from app1.auxilary_functions import *
-# Create your views here.
+
 
 
 @api_view(['POST'])
 def send_invite(request):
     """Main function"""
     if request.method == 'POST':
-        sender = request.data.pop('sender')
-        receiver = request.data.pop('receiver')
+        serializer = NumberSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            sender = serializer.validated_data['sender']
+            receiver = serializer.validated_data['receiver']
     if sender == receiver:
         return Response('This is not possible!', status=status.HTTP_403_FORBIDDEN)
-    sender_instance = check_in_db(sender)  # creates new obj in Subs and returns it
-    receiver_instance = check_in_db(receiver)  # creates new obj in Subs and returns it
     try:
+        sender_instance = check_in_db(sender)  # creates new obj in Subs and returns it
+        receiver_instance = check_in_db(receiver)  # creates new obj in Subs and returns it
         check_for_registered_receiver(receiver_instance)
         check_send_only_once(sender_instance, receiver_instance)
         rewrite_invitations_to_receiver(receiver_instance)

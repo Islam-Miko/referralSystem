@@ -20,3 +20,6 @@ class AcceptedError(Exception):
 
 class AlreadyRegisteredError(Exception):
     ...
+
+class SelfSendingError(Exception):
+    pass

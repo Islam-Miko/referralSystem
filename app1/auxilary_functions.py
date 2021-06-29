@@ -3,7 +3,7 @@ import datetime
 from .models import Subscribers, Invite
 from django.db.models import Count, Q
 
-from .errors import (OnlyOnceError, AcceptedError,
+from .errors import (OnlyOnceError,
                      AlreadyRegisteredError,
                      SelfSendingError)
 
@@ -45,14 +45,6 @@ def check_send_only_once(sender, receiver):
         Q(sender_id=sender) & Q(receiver_id=receiver) & Q(start_date__day=datetime.datetime.today().day))
     if senders_invitations_for_day:
         raise OnlyOnceError
-
-
-def check_for_registered_receiver(receiver):
-    """checks if there are invitation to number that were ACCEPTED"""
-    q = Invite.objects.filter(receiver_id=receiver).last()
-    if q is not None:
-        if q.status == 'ACCEPTED':
-            raise AcceptedError
 
 
 def get_last_invitation(obj):

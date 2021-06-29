@@ -1,5 +1,3 @@
-
-
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -8,7 +6,6 @@ from rest_framework import status
 from .models import Subscribers
 from .serializers import InviteSerializer, SubsSerializer, NumberSerializer
 from app1.auxilary_functions import *
-
 
 
 @api_view(['POST'])
@@ -22,17 +19,12 @@ def send_invite(request):
     try:
         check_self_sending(sender, receiver)
         sender_instance, receiver_instance = check_in_db(sender), check_in_db(receiver)
-        check_for_registered_receiver(receiver_instance)
         check_send_only_once(sender_instance, receiver_instance)
         rewrite_invitations_to_receiver(receiver_instance)
         create_new_invite(sender_instance, receiver_instance)
-    except SelfSendingError:
-        return Response('You cannot send an invitation to yourself!', status=status.HTTP_403_FORBIDDEN)
     except OnlyOnceError:
         return Response('You have already sent an invitations to this person today',
                         status=status.HTTP_403_FORBIDDEN)
-    except AcceptedError:
-        return Response('Abonement already registered!')
     return Response(f'Invite was sent to {receiver}', status=status.HTTP_202_ACCEPTED)
 
 

@@ -32,3 +32,11 @@ def check_for_notification_property(receiver_phone):
     receiver_instance = Subscribers.objects.filter(phone=receiver_phone).get()
     if not receiver_instance.active:
         raise serializers.ValidationError(['Abo set notification off!'])
+
+
+def check_for_registered_receiver(receiver_phone):
+    """checks if there are invitation to number that were ACCEPTED"""
+    q = Invite.objects.filter(receiver_id__phone=receiver_phone).last()
+    if q is not None:
+        if q.status == 'ACCEPTED':
+            raise serializers.ValidationError(['This Abo had already registered'])

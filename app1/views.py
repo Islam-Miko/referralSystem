@@ -11,9 +11,12 @@ from app1.auxilary_functions import *
 # Create your views here.
 
 
-@api_view(['GET'])
-def send_invite(request, sender, receiver):
+@api_view(['POST'])
+def send_invite(request):
     """Main function"""
+    if request.method == 'POST':
+        sender = request.data.pop('sender')
+        receiver = request.data.pop('receiver')
     if sender == receiver:
         return Response('This is not possible!', status=status.HTTP_403_FORBIDDEN)
     sender_instance = check_in_db(sender)  # creates new obj in Subs and returns it

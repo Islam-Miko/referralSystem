@@ -3,7 +3,11 @@ import datetime
 from .models import Subscribers, Invite
 from django.db.models import Count, Q
 
-from .errors import AmountError, NotificationOff, MonthAmountError, OnlyOnceError, AcceptedError, AlreadyRegisteredError
+from .errors import (AmountError, NotificationOff,
+                     MonthAmountError,
+                     OnlyOnceError, AcceptedError,
+                     AlreadyRegisteredError,
+                     SelfSendingError)
 
 
 def check_in_db(phone):
@@ -14,6 +18,12 @@ def check_in_db(phone):
     # get_or_create() returns tuple
     # first element is obj, second is boolean- if instance was created or not
     # that is wy we take first element
+
+
+def check_self_sending(sender, receiver):
+    """Checks if numbers are identical"""
+    if sender == receiver:
+        raise SelfSendingError
 
 
 def create_new_invite(sender, receiver):

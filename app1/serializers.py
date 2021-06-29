@@ -20,9 +20,12 @@ def isdecim(value):
 
 
 class NumberSerializer(serializers.Serializer):
-    sender = serializers.CharField(max_length=12,
-                                   min_length=12,
+    sender = serializers.CharField(max_length=10,
+                                   min_length=10,
                                    validators=[isdecim])
-    receiver = serializers.CharField(min_length=12,
-                                     max_length=12,
+    receiver = serializers.CharField(min_length=10,
+                                     max_length=10,
                                      validators=[isdecim])
+
+
+

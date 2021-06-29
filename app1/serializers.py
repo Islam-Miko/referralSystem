@@ -1,5 +1,9 @@
-from .models  import Invite, Subscribers
+from .models import Invite, Subscribers
 from rest_framework import serializers
+
+from app1.validatoin_func import(isdecim,
+                             conditions_for_sender,
+                             check_for_notification_property)
 
 
 class InviteSerializer(serializers.ModelSerializer):
@@ -14,18 +18,16 @@ class SubsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-def isdecim(value):
-    if not value.isdecimal():
-        raise serializers.ValidationError(['Incorrect type of number!'])
-
 
 class NumberSerializer(serializers.Serializer):
     sender = serializers.CharField(max_length=10,
                                    min_length=10,
-                                   validators=[isdecim])
+                                   validators=[isdecim,
+                                               conditions_for_sender])
     receiver = serializers.CharField(min_length=10,
                                      max_length=10,
-                                     validators=[isdecim])
+                                     validators=[isdecim,
+                                                 check_for_notification_property])
 
 
 

@@ -3,9 +3,7 @@ import datetime
 from .models import Subscribers, Invite
 from django.db.models import Count, Q
 
-from .errors import (AmountError, NotificationOff,
-                     MonthAmountError,
-                     OnlyOnceError, AcceptedError,
+from .errors import (OnlyOnceError, AcceptedError,
                      AlreadyRegisteredError,
                      SelfSendingError)
 
@@ -30,31 +28,6 @@ def create_new_invite(sender, receiver):
     """creates new inst in Invite"""
     new_invite_instance = Invite(sender_id=sender, receiver_id=receiver)
     new_invite_instance.save()
-
-
-def conditions_for_sender(sender):
-    """checks all conditions for sender
-    limit of 5 invitations to one day
-    limit of 30 invitations to one month"""
-    senders_invitations_for_day = Invite.objects.filter(
-                            Q(sender_id=sender) &
-                            Q(start_date__day=datetime.datetime.today().day) &
-                            Q(start_date__month=datetime.datetime.today().month
-                            )).aggregate(qnt=Count('sender_id'))
-    senders_invitations_for_month = Invite.objects.filter(
-        Q(sender_id=sender) & Q(start_date__month=datetime.datetime.today().month
-                                )).aggregate(qnt=Count('sender_id'))
-    if senders_invitations_for_day['qnt'] >= 5:
-        raise AmountError
-    if senders_invitations_for_month['qnt'] >= 30:
-        raise MonthAmountError
-
-
-def check_for_notification_property(phone):
-    """checks active field of receiver"""
-    receiver_instance = phone
-    if not receiver_instance.active:
-        raise NotificationOff
 
 
 def rewrite_invitations_to_receiver(receiver):

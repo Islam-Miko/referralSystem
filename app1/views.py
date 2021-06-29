@@ -22,20 +22,12 @@ def send_invite(request):
     try:
         check_self_sending(sender, receiver)
         sender_instance, receiver_instance = check_in_db(sender), check_in_db(receiver)
-        check_for_notification_property(receiver_instance)
-        conditions_for_sender(sender_instance)
         check_for_registered_receiver(receiver_instance)
         check_send_only_once(sender_instance, receiver_instance)
         rewrite_invitations_to_receiver(receiver_instance)
         create_new_invite(sender_instance, receiver_instance)
     except SelfSendingError:
         return Response('You cannot send an invitation to yourself!', status=status.HTTP_403_FORBIDDEN)
-    except AmountError:
-        return Response('You sent more than 5 invitations today', status=status.HTTP_405_METHOD_NOT_ALLOWED)
-    except NotificationOff:
-        return Response('Abonement set notification off', status=status.HTTP_403_FORBIDDEN)
-    except MonthAmountError:
-        return Response('You sent more than 30 invitations this month', status=status.HTTP_405_METHOD_NOT_ALLOWED)
     except OnlyOnceError:
         return Response('You have already sent an invitations to this person today',
                         status=status.HTTP_403_FORBIDDEN)
